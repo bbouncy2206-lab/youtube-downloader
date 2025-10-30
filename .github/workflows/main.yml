@@ -1,0 +1,118 @@
+name: YouTube Playlist to ZIP Downloader
+on:
+  workflow_dispatch:
+    inputs:
+      playlist_url:
+        description: 'URL de la playlist YouTube'
+        required: true
+        default: 'https://youtube.com/playlist?list=XXX'
+      quality:
+        description: 'Qualité vidéo'
+        required: true
+        default: '720p'
+        type: choice
+        options:
+        - 1080p
+        - 720p 
+        - 480p
+        - best
+
+jobs:
+  youtube-playlist-downloader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    
+    steps:
+    - name: Setup Environment
+      run: |
+        echo "🚀 YouTube Playlist Downloader - 1Gbps"
+        echo "📹 Playlist URL: ${{ inputs.playlist_url }}"
+        echo "🎯 Quality: ${{ inputs.quality }}"
+        
+    - name: Install YouTube Tools
+      run: |
+        # Installation yt-dlp (ultra rapide)
+        sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+        sudo chmod a+rx /usr/local/bin/yt-dlp
+        
+        # Dépendances pour vitesse max
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg aria2 zip unzip curl
+        
+        # Installation pip pour dernières features
+        pip3 install yt-dlp[default]
+        
+    - name: Configure Maximum Speed
+      run: |
+        # Configuration pour 1Gbps
+        mkdir -p ~/.config/yt-dlp
+        cat > ~/.config/yt-dlp/config << EOF
+        # Configuration Ultra Rapide
+        --no-mtime
+        --no-overwrites
+        --continue
+        --concurrent-fragments 16
+        --http-chunk-size 50M
+        --external-downloader aria2c
+        --external-downloader-args "-x 16 -k 1M -s 16 -j 16"
+        --limit-rate 500M
+        --retries 10
+        --fragment-retries 10
+        EOF
+        
+    - name: Download Playlist
+      run: |
+        echo "📥 Téléchargement de la playlist..."
+        
+        # Déterminer le format basé sur la qualité
+        if [ "${{ inputs.quality }}" == "best" ]; then
+          FORMAT="bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+        else
+          FORMAT="bestvideo[height<=${{{ inputs.quality }}/p}]+bestaudio/best[height<=${{{ inputs.quality }}/p}]"
+        fi
+        
+        # Téléchargement avec options optimisées
+        yt-dlp \
+          --format "$FORMAT" \
+          --merge-output-format mp4 \
+          --output "playlist_videos/%(title)s.%(ext)s" \
+          --concurrent-fragments 32 \
+          --external-downloader aria2c \
+          --external-downloader-args "-x 32 -k 2M -s 32 -j 32" \
+          "${{ inputs.playlist_url }}"
+          
+        echo "✅ Téléchargement terminé !"
+        
+    - name: Create ZIP Archive
+      run: |
+        echo "🗜️ Création de l'archive ZIP..."
+        
+        # Créer le ZIP avec compression maximale
+        zip -r "youtube_playlist.zip" "playlist_videos/" -9
+        
+        # Afficher les informations
+        echo "📦 Archive créée: youtube_playlist.zip"
+        du -h "youtube_playlist.zip"
+        echo "📁 Fichiers dans l'archive:"
+        ls -la "playlist_videos/" | wc -l
+        
+    - name: Upload ZIP as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: youtube-playlist
+        path: youtube_playlist.zip
+        retention-days: 30
+        compression-level: 9
+        
+    - name: Display Download Summary
+      run: |
+        echo " "
+        echo "🎉 TÉLÉCHARGEMENT TERMINÉ !"
+        echo "==================================="
+        echo "📹 Playlist: ${{ inputs.playlist_url }}"
+        echo "💾 Archive: youtube_playlist.zip"
+        echo "📁 Videos: $(find playlist_videos/ -name '*.mp4' | wc -l) fichiers"
+        echo "📦 Taille: $(du -h youtube_playlist.zip | cut -f1)"
+        echo " "
+        echo "⬇️ Télécharge le ZIP dans l'onglet 'Artifacts' ci-dessus ↑"
+        echo "==================================="
