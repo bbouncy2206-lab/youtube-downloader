@@ -22,10 +22,9 @@ jobs:
         sudo apt-get install -y python3-pip ffmpeg zip
         pip3 install --upgrade yt-dlp
 
-    - name: Créer le fichier cookies.txt
+    - name: Créer le fichier cookies.txt (format correct)
       run: |
-        mkdir -p cookies
-        cat > cookies/youtube.txt << 'EOF'
+        cat > cookies.txt << 'EOF'
         # Netscape HTTP Cookie File
         .youtube.com	TRUE	/	FALSE	1796420629	HSID	A8XM_f52BFLyhr5B3
         .youtube.com	TRUE	/	TRUE	1796420629	SSID	AqP1D6G4pLc7f88Bt
@@ -49,29 +48,53 @@ jobs:
         .youtube.com	TRUE	/	TRUE	1777401415	__Secure-ROLLOUT_TOKEN	CJ6jh76s24Ss5gEQ_KHM_7uzkAMY1tOexMjMkAM%3D
         EOF
 
+    - name: Vérifier le fichier cookies
+      run: |
+        echo "📄 Contenu du fichier cookies.txt:"
+        cat cookies.txt
+        echo ""
+        echo "✅ Fichier cookies créé avec $(wc -l < cookies.txt) lignes"
+
     - name: Télécharger la playlist YouTube
       run: |
         mkdir -p downloads
         yt-dlp \
-          --cookies cookies/youtube.txt \
+          --cookies cookies.txt \
           --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
           --merge-output-format mp4 \
           --ignore-errors \
           --no-warnings \
           --retries 10 \
           --fragment-retries 10 \
+          --sleep-interval 2 \
+          --max-sleep-interval 5 \
           --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+          --add-header "Accept-Language:en-US,en;q=0.9" \
+          --add-header "Accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+          --extractor-args "youtube:player_client=web" \
           -o "downloads/%(playlist_index)s - %(title)s.%(ext)s" \
           "${{ github.event.inputs.playlist_url }}"
 
+    - name: Vérifier les téléchargements
+      run: |
+        echo "📊 Fichiers téléchargés:"
+        ls -lh downloads/ || echo "❌ Aucun fichier téléchargé"
+
     - name: Créer l'archive ZIP
+      if: success()
       run: |
         cd downloads
-        zip -r ../youtube_playlist.zip .
-        cd ..
-        echo "📦 Archive créée : $(du -h youtube_playlist.zip | cut -f1)"
+        if [ "$(ls -A)" ]; then
+          zip -r ../youtube_playlist.zip .
+          cd ..
+          echo "📦 Archive créée : $(du -h youtube_playlist.zip | cut -f1)"
+        else
+          echo "❌ Aucun fichier à archiver"
+          exit 1
+        fi
 
     - name: Upload les vidéos
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: youtube-playlist-${{ github.run_number }}
@@ -79,7 +102,13 @@ jobs:
         retention-days: 7
 
     - name: Résumé du téléchargement
+      if: always()
       run: |
-        echo "✅ Téléchargement terminé !"
-        echo "📊 Nombre de fichiers : $(ls -1 downloads | wc -l)"
-        echo "💾 Taille totale : $(du -sh downloads | cut -f1)"
+        if [ -d "downloads" ] && [ "$(ls -A downloads)" ]; then
+          echo "✅ Téléchargement terminé !"
+          echo "📊 Nombre de fichiers : $(ls -1 downloads | wc -l)"
+          echo "💾 Taille totale : $(du -sh downloads | cut -f1)"
+        else
+          echo "⚠️ Aucune vidéo n'a été téléchargée"
+          echo "🔍 Vérifiez que vos cookies sont toujours valides"
+        fi
