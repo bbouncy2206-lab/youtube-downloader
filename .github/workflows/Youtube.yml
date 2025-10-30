@@ -1,53 +1,85 @@
-name: YouTube Downloader
+name: YouTube Playlist Downloader
 
 on:
   workflow_dispatch:
     inputs:
       playlist_url:
-        description: 'YouTube Playlist URL'
+        description: 'URL de la playlist YouTube'
         required: true
+        type: string
 
 jobs:
   download:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Installer les outils
-      run: |
-        sudo apt update
-        sudo apt install -y python3-pip ffmpeg zip
-        pip3 install yt-dlp
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    - name: Créer le fichier cookies
+    - name: Installer les dépendances
       run: |
-        cat > cookies.txt << 'EOF'
-# Netscape HTTP Cookie File
-.youtube.com	TRUE	/	FALSE	1796420629	HSID	A8XM_f52BFLyhr5B3
-.youtube.com	TRUE	/	TRUE	1796420629	SSID	AqP1D6G4pLc7f88Bt
-.youtube.com	TRUE	/	FALSE	1796420629	APISID	e-IqRTByZ4RaIq-Q/ApaJSIuJ5Wne8d0TZ
-.youtube.com	TRUE	/	TRUE	1796420629	SAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
-.youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
-.youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
-.youtube.com	TRUE	/	TRUE	1795547058	LOGIN_INFO	AFmmF2swRAIgCsYq6oKITKKUbgf5KlRCVY0XXC9Hk1BCkuP0zkWNK3MCIG-aI53OvSx5Yzu3leemSEebTXKBedWxtgdIHnGNS4LC:QUQ3MjNmeEpPc0VycUVuNDM3bVdqcmhROU9CcnRvU3lyYnNrXzFUVy0zYTU4eXl0MFZXcnVwbmdwVUl5RUJlemtudEcwUjBoNWVYWldwenBXM2lXUHlfX3NheEVXOU9hVkFUYkh1WG9nRzdjQWg1aUFvcEJxYVdwcXRsb2xocVhnNWo4TWJGdHIxdWNBVTh2dzU0UmhNTEVvcjM5TnZfNkFB
-.youtube.com	TRUE	/	TRUE	1796421663	PREF	f4=4000000&tz=Africa.Casablanca&f7=100
-EOF
+        sudo apt-get update
+        sudo apt-get install -y python3-pip ffmpeg zip
+        pip3 install --upgrade yt-dlp
 
-    - name: Télécharger les vidéos
+    - name: Créer le fichier cookies.txt
       run: |
+        mkdir -p cookies
+        cat > cookies/youtube.txt << 'EOF'
+        # Netscape HTTP Cookie File
+        .youtube.com	TRUE	/	FALSE	1796420629	HSID	A8XM_f52BFLyhr5B3
+        .youtube.com	TRUE	/	TRUE	1796420629	SSID	AqP1D6G4pLc7f88Bt
+        .youtube.com	TRUE	/	FALSE	1796420629	APISID	e-IqRTByZ4RaIq-Q/ApaJSIuJ5Wne8d0TZ
+        .youtube.com	TRUE	/	TRUE	1796420629	SAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
+        .youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
+        .youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
+        .youtube.com	TRUE	/	TRUE	1795547058	LOGIN_INFO	AFmmF2swRAIgCsYq6oKITKKUbgf5KlRCVY0XXC9Hk1BCkuP0zkWNK3MCIG-aI53OvSx5Yzu3leemSEebTXKBedWxtgdIHnGNS4LC:QUQ3MjNmeEpPc0VycUVuNDM3bVdqcmhROU9CcnRvU3lyYnNrXzFUVy0zYTU4eXl0MFZXcnVwbmdwVUl5RUJlemtudEcwUjBoNWVYWldwenBXM2lXUHlfX3NheEVXOU9hVkFUYkh1WG9nRzdjQWg1aUFvcEJxYVdwcXRsb2xocVhnNWo4TWJGdHIxdWNBVTh2dzU0UmhNTEVvcjM5TnZfNkFB
+        .youtube.com	TRUE	/	TRUE	1796421663	PREF	f4=4000000&tz=Africa.Casablanca&f7=100
+        .youtube.com	TRUE	/	FALSE	1796420629	SID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOsj6xENYkrc56nUH9F6O3WAACgYKAZgSARcSFQHGX2Mimux-hozHrkU5dnMIx0r89xoVAUF8yKrgeQYqi2FhG9Oi_cHMP9bm0076
+        .youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOCb6GUUTlVhNZ14lGvZMCjgACgYKAaMSARcSFQHGX2MixUc5O-biDgPDvIpquSwR1BoVAUF8yKppaExgDHDAxQAGU13-nI6h0076
+        .youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOVV8W_EqfTHurrna6H5K79AACgYKATMSARcSFQHGX2MiwowKIid-WDBmSU-_fD0bThoVAUF8yKrJ55HVzyAxfDr2-MSS-MTv0076
+        .youtube.com	TRUE	/	TRUE	1793397239	__Secure-1PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
+        .youtube.com	TRUE	/	TRUE	1793397239	__Secure-3PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
+        .youtube.com	TRUE	/	FALSE	1793397663	SIDCC	AKEyXzUDHZHZ_Jw3-AX1hDwRcvDGUeQQqM_T7vKCbK2ZHV5q2UP13y03GHTSGLLKwVCWfok-WRo
+        .youtube.com	TRUE	/	TRUE	1793397663	__Secure-1PSIDCC	AKEyXzUKL7s-6qkTd_YOkD7yZdh0HDBNN13XnnMIeo8iT1qw3vFXIYHi39_nXrOvq14YlRFoXg
+        .youtube.com	TRUE	/	TRUE	1793397663	__Secure-3PSIDCC	AKEyXzW_xF7qwOP362NuRwDLPfyySOfVnDjnvZL0PEyHWgmjrCmKnLk51vM3nS4CYhzCbzr-ag4
+        .youtube.com	TRUE	/	TRUE	1777413657	VISITOR_INFO1_LIVE	EsfKh0eQ3S0
+        .youtube.com	TRUE	/	TRUE	1777413657	VISITOR_PRIVACY_METADATA	CgJNQRIEGgAgZQ%3D%3D
+        .youtube.com	TRUE	/	TRUE	0	YSC	wva4-DWxd54
+        .youtube.com	TRUE	/	TRUE	1777401415	__Secure-ROLLOUT_TOKEN	CJ6jh76s24Ss5gEQ_KHM_7uzkAMY1tOexMjMkAM%3D
+        EOF
+
+    - name: Télécharger la playlist YouTube
+      run: |
+        mkdir -p downloads
         yt-dlp \
-          --cookies cookies.txt \
-          --format "best[ext=mp4]" \
+          --cookies cookies/youtube.txt \
+          --format "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+          --merge-output-format mp4 \
           --ignore-errors \
           --no-warnings \
-          -o "videos/%(title)s.%(ext)s" \
+          --retries 10 \
+          --fragment-retries 10 \
+          --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+          -o "downloads/%(playlist_index)s - %(title)s.%(ext)s" \
           "${{ github.event.inputs.playlist_url }}"
 
-    - name: Créer le ZIP
+    - name: Créer l'archive ZIP
       run: |
-        zip -r youtube_videos.zip videos/
+        cd downloads
+        zip -r ../youtube_playlist.zip .
+        cd ..
+        echo "📦 Archive créée : $(du -h youtube_playlist.zip | cut -f1)"
 
-    - name: Upload le résultat
+    - name: Upload les vidéos
       uses: actions/upload-artifact@v4
       with:
-        name: youtube-downloads
-        path: youtube_videos.zip
+        name: youtube-playlist-${{ github.run_number }}
+        path: youtube_playlist.zip
+        retention-days: 7
+
+    - name: Résumé du téléchargement
+      run: |
+        echo "✅ Téléchargement terminé !"
+        echo "📊 Nombre de fichiers : $(ls -1 downloads | wc -l)"
+        echo "💾 Taille totale : $(du -sh downloads | cut -f1)"
