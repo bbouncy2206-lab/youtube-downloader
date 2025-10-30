@@ -1,4 +1,4 @@
-name: YouTube Downloader avec TES Cookies
+name: YouTube Downloader avec Cookies
 on:
   workflow_dispatch:
     inputs:
@@ -9,12 +9,6 @@ on:
         description: 'Qualité vidéo'
         required: false
         default: 'best'
-        type: choice
-        options:
-          - best
-          - 1080p
-          - 720p
-          - 480p
 
 jobs:
   download:
@@ -28,15 +22,12 @@ jobs:
         sudo apt-get install -y ffmpeg python3-pip zip
         pip3 install yt-dlp --upgrade
         
-    - name: Créer le fichier cookies avec TES cookies
+    - name: Créer le fichier cookies
       run: |
-        echo "🍪 Création du fichier cookies avec TES données..."
+        echo "🍪 Création du fichier cookies..."
         
         cat > cookies.txt << 'EOF'
 # Netscape HTTP Cookie File
-# https://curl.haxx.se/rfc/cookie_spec.html
-# This is a generated file! Do not edit.
-
 .youtube.com	TRUE	/	FALSE	1796420629	HSID	A8XM_f52BFLyhr5B3
 .youtube.com	TRUE	/	TRUE	1796420629	SSID	AqP1D6G4pLc7f88Bt
 .youtube.com	TRUE	/	FALSE	1796420629	APISID	e-IqRTByZ4RaIq-Q/ApaJSIuJ5Wne8d0TZ
@@ -61,15 +52,16 @@ EOF
 
         echo "✅ Fichier cookies créé"
         
-    - name: Télécharger la playlist avec cookies
+    - name: Télécharger la playlist
       run: |
-        echo "🎬 Début du téléchargement avec authentification..."
+        echo "🎬 Début du téléchargement..."
         
-        if [ "${{ github.event.inputs.quality }}" = "1080p" ]; then
+        QUALITY="${{ github.event.inputs.quality }}"
+        if [ "$QUALITY" = "1080p" ]; then
           FORMAT="best[height<=1080]"
-        elif [ "${{ github.event.inputs.quality }}" = "720p" ]; then
+        elif [ "$QUALITY" = "720p" ]; then
           FORMAT="best[height<=720]"
-        elif [ "${{ github.event.inputs.quality }}" = "480p" ]; then
+        elif [ "$QUALITY" = "480p" ]; then
           FORMAT="best[height<=480]"
         else
           FORMAT="best"
@@ -82,66 +74,37 @@ EOF
           --ignore-errors \
           --no-warnings \
           --restrict-filenames \
-          --concurrent-fragments 3 \
-          --output "videos/%(playlist_title)s/%(playlist_index)02d - %(title).100s.%(ext)s" \
+          --output "videos/%(title)s.%(ext)s" \
           "${{ github.event.inputs.playlist_url }}"
           
-        echo "✅ Téléchargement terminé avec succès !"
+        echo "✅ Téléchargement terminé !"
         
     - name: Vérifier les téléchargements
       run: |
-        echo "🔍 Vérification des fichiers..."
+        echo "🔍 Vérification..."
         if [ -d "videos" ]; then
-          VIDEO_COUNT=$(find videos/ -name "*.mp4" -type f | wc -l)
-          echo "📹 Nombre de vidéos téléchargées : $VIDEO_COUNT"
-          
-          if [ $VIDEO_COUNT -gt 0 ]; then
-            echo "🎯 Liste des premières vidéos :"
-            find videos/ -name "*.mp4" -type f | head -5
-            echo "💾 Taille totale : $(du -sh videos/ | cut -f1)"
-          else
-            echo "❌ Aucune vidéo trouvée"
-            exit 1
-          fi
+          VIDEO_COUNT=$(find videos/ -name "*.mp4" | wc -l)
+          echo "📹 Vidéos téléchargées: $VIDEO_COUNT"
+          ls -la videos/ | head -10
         else
-          echo "❌ Dossier videos non trouvé"
+          echo "❌ Aucune vidéo téléchargée"
           exit 1
         fi
         
     - name: Créer l'archive ZIP
       run: |
         TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-        PLAYLIST_NAME=$(find videos/ -maxdepth 1 -type d -name "*" | head -1 | xargs basename 2>/dev/null || echo "youtube_playlist")
+        zip -r "youtube_playlist_$TIMESTAMP.zip" "videos/" -9
+        echo "✅ Archive créée: youtube_playlist_$TIMESTAMP.zip"
         
-        echo "📦 Création de l'archive : ${PLAYLIST_NAME}_${TIMESTAMP}.zip"
-        
-        zip -r "${PLAYLIST_NAME}_${TIMESTAMP}.zip" "videos/" -9
-        
-        ZIP_SIZE=$(du -h "${PLAYLIST_NAME}_${TIMESTAMP}.zip" | cut -f1)
-        VIDEO_COUNT=$(find videos/ -name "*.mp4" | wc -l)
-        
-        echo "✅ Archive créée : ${PLAYLIST_NAME}_${TIMESTAMP}.zip"
-        echo "📊 Taille : $ZIP_SIZE"
-        echo "🎬 Vidéos : $VIDEO_COUNT"
-        
-    - name: Upload l'archive ZIP
+    - name: Upload l'archive
       uses: actions/upload-artifact@v4
       with:
-        name: youtube-playlist-complete
+        name: youtube-videos
         path: "*.zip"
         retention-days: 7
         
-    - name: Nettoyage sécurisé
+    - name: Nettoyage
       run: |
         rm -f cookies.txt
-        echo "🧹 Cookies supprimés pour sécurité"
-        
-    - name: Message de succès
-      run: |
-        echo " "
-        echo "🎉 SUCCÈS COMPLET !"
-        echo "===================="
-        echo "📦 Le fichier ZIP est disponible dans 'Artifacts'"
-        echo "⬇️  Télécharge-le sur ton PC et décompresse-le"
-        echo "🔒 Les cookies ont été supprimés automatiquement"
-        echo " "
+        echo "🧹 Nettoyage terminé"
