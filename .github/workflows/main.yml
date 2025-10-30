@@ -1,147 +1,42 @@
-name: YouTube Playlist Downloader (Cookies Fix)
+name: YouTube Turbo (Sans Cookies)
 on:
   workflow_dispatch:
     inputs:
       playlist_url:
-        description: 'URL de la playlist YouTube'
+        description: 'URL playlist YouTube'
         required: true
-      quality:
-        description: 'Qualité vidéo'
-        required: true
-        default: '720p'
-        type: choice
-        options:
-        - 1080p
-        - 720p
-        - 480p
 
 jobs:
-  youtube-downloader:
+  download:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 30
     
     steps:
-    - name: Install YouTube Tools
+    - name: Installer yt-dlp avec dépendances
       run: |
-        echo "🔧 Installation des outils..."
         sudo apt-get update
         sudo apt-get install -y ffmpeg python3-pip aria2
         pip3 install yt-dlp --upgrade
         
-    - name: Setup Cookies from Secret
+    - name: Téléchargement turbo sans cookies
       run: |
-        echo "🍪 Configuration des cookies YouTube..."
-        
-        # Créer le fichier cookies avec le bon format
-        cat > cookies.txt << 'EOF'
-# Netscape HTTP Cookie File
-# https://curl.haxx.se/rfc/cookie_spec.html
-# This is a generated file! Do not edit.
-
-.youtube.com	TRUE	/	FALSE	1796420629	HSID	A8XM_f52BFLyhr5B3
-.youtube.com	TRUE	/	TRUE	1796420629	SSID	AqP1D6G4pLc7f88Bt
-.youtube.com	TRUE	/	FALSE	1796420629	APISID	e-IqRTByZ4RaIq-Q/ApaJSIuJ5Wne8d0TZ
-.youtube.com	TRUE	/	TRUE	1796420629	SAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
-.youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
-.youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
-.youtube.com	TRUE	/	TRUE	1795547058	LOGIN_INFO	AFmmF2swRAIgCsYq6oKITKKUbgf5KlRCVY0XXC9Hk1BCkuP0zkWNK3MCIG-aI53OvSx5Yzu3leemSEebTXKBedWxtgdIHnGNS4LC:QUQ3MjNmeEpPc0VycUVuNDM3bVdqcmhROU9CcnRvU3lyYnNrXzFUVy0zYTU4eXl0MFZXcnVwbmdwVUl5RUJlemtudEcwUjBoNWVYWldwenBXM2lXUHlfX3NheEVXOU9hVkFUYkh1WG9nRzdjQWg1aUFvcEJxYVdwcXRsb2xocVhnNWo4TWJGdHIxdWNBVTh2dzU0UmhNTEVvcjM5TnZfNkFB
-.youtube.com	TRUE	/	TRUE	1796421663	PREF	f4=4000000&tz=Africa.Casablanca&f7=100
-.youtube.com	TRUE	/	FALSE	1796420629	SID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOsj6xENYkrc56nUH9F6O3WAACgYKAZgSARcSFQHGX2Mimux-hozHrkU5dnMIx0r89xoVAUF8yKrgeQYqi2FhG9Oi_cHMP9bm0076
-.youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOCb6GUUTlVhNZ14lGvZMCjgACgYKAaMSARcSFQHGX2MixUc5O-biDgPDvIpquSwR1BoVAUF8yKppaExgDHDAxQAGU13-nI6h0076
-.youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOVV8W_EqfTHurrna6H5K79AACgYKATMSARcSFQHGX2MiwowKIid-WDBmSU-_fD0bThoVAUF8yKrJ55HVzyAxfDr2-MSS-MTv0076
-.youtube.com	TRUE	/	TRUE	1793397239	__Secure-1PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
-.youtube.com	TRUE	/	TRUE	1793397239	__Secure-3PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
-.youtube.com	TRUE	/	FALSE	1793397663	SIDCC	AKEyXzUDHZHZ_Jw3-AX1hDwRcvDGUeQQqM_T7vKCbK2ZHV5q2UP13y03GHTSGLLKwVCWfok-WRo
-.youtube.com	TRUE	/	TRUE	1793397663	__Secure-1PSIDCC	AKEyXzUKL7s-6qkTd_YOkD7yZdh0HDBNN13XnnMIeo8iT1qw3vFXIYHi39_nXrOvq14YlRFoXg
-.youtube.com	TRUE	/	TRUE	1793397663	__Secure-3PSIDCC	AKEyXzW_xF7qwOP362NuRwDLPfyySOfVnDjnvZL0PEyHWgmjrCmKnLk51vM3nS4CYhzCbzr-ag4
-.youtube.com	TRUE	/	TRUE	1777413657	VISITOR_INFO1_LIVE	EsfKh0eQ3S0
-.youtube.com	TRUE	/	TRUE	1777413657	VISITOR_PRIVACY_METADATA	CgJNQRIEGgAgZQ%3D%3D
-.youtube.com	TRUE	/	TRUE	0	YSC	wva4-DWxd54
-.youtube.com	TRUE	/	TRUE	1777401415	__Secure-ROLLOUT_TOKEN	CJ6jh76s24Ss5gEQ_KHM_7uzkAMY1tOexMjMkAM%3D
-EOF
-
-        echo "✅ Fichier cookies créé"
-        echo "📊 Vérification du fichier cookies..."
-        ls -la cookies.txt
-        head -5 cookies.txt
-        
-    - name: Download Playlist with Enhanced Cookie Support
-      run: |
-        echo "🎬 Téléchargement avec cookies améliorés..."
-        
-        # Configuration qualité
-        if [ "${{ github.event.inputs.quality }}" = "1080p" ]; then
-          FORMAT="bestvideo[height<=1080]+bestaudio/best[height<=1080]"
-        elif [ "${{ github.event.inputs.quality }}" = "720p" ]; then
-          FORMAT="bestvideo[height<=720]+bestaudio/best[height<=720]"
-        elif [ "${{ github.event.inputs.quality }}" = "480p" ]; then
-          FORMAT="bestvideo[height<=480]+bestaudio/best[height<=480]"
-        else
-          FORMAT="bestvideo[height<=720]+bestaudio/best[height<=720]"
-        fi
-        
-        # Téléchargement avec configuration améliorée des cookies
         yt-dlp \
-          --cookies cookies.txt \
-          --format "$FORMAT" \
-          --merge-output-format mp4 \
-          --output "playlist_videos/%(title)s.%(ext)s" \
-          --concurrent-fragments 8 \
-          --throttled-rate 100K \
-          --ignore-errors \
-          --no-overwrites \
-          --continue \
-          --extractor-args "youtube:player_client=android,web" \
-          --add-header "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-          "${{ github.event.inputs.playlist_url }}" || echo "⚠️ Certaines vidéos ont pu échouer"
-          
-        echo "✅ Téléchargement terminé !"
+        --format "best[ext=mp4]/best" \
+        --ignore-errors \
+        --no-warnings \
+        --restrict-filenames \
+        --concurrent-fragments 5 \
+        --throttled-rate 1M \
+        --buffer-size 16K \
+        --http-chunk-size 10M \
+        --extractor-args "youtube:player_client=android" \
+        --add-header "User-Agent:Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36" \
+        --add-header "Accept-Language:fr-FR,fr;q=0.9" \
+        -o "videos/%(title).100s.%(ext)s" \
+        "${{ inputs.playlist_url }}"
         
-    - name: Verify Downloads
-      run: |
-        echo "🔍 Vérification des téléchargements..."
-        if [ -d "playlist_videos" ]; then
-          VIDEO_COUNT=$(find playlist_videos/ -name "*.mp4" -type f | wc -l)
-          echo "📹 Nombre de vidéos téléchargées: $VIDEO_COUNT"
-          if [ $VIDEO_COUNT -gt 0 ]; then
-            ls -la playlist_videos/
-          else
-            echo "❌ Aucune vidéo téléchargée - vérifiez les cookies"
-          fi
-        else
-          echo "❌ Dossier playlist_videos non trouvé"
-        fi
-        
-    - name: Create Organized ZIP
-      run: |
-        echo "🗜️ Création de l'archive ZIP..."
-        
-        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-        ZIP_NAME="youtube_playlist_${TIMESTAMP}.zip"
-        
-        # Vérifier si des vidéos ont été téléchargées
-        if [ -d "playlist_videos" ] && [ "$(ls -A playlist_videos 2>/dev/null)" ]; then
-          zip -r "${ZIP_NAME}" "playlist_videos/" -9
-          VIDEO_COUNT=$(find playlist_videos/ -name "*.mp4" | wc -l)
-          ZIP_SIZE=$(du -h "${ZIP_NAME}" | cut -f1)
-          echo "📦 Archive: ${ZIP_NAME}"
-          echo "🎬 Vidéos: ${VIDEO_COUNT}"
-          echo "💾 Taille: ${ZIP_SIZE}"
-        else
-          echo "❌ Aucune vidéo téléchargée - problème d'authentification"
-          echo "Les cookies peuvent être expirés ou incomplets" > error.txt
-          zip "${ZIP_NAME}" "error.txt"
-        fi
-        
-    - name: Upload ZIP Artifact
+    - name: Upload résultat
       uses: actions/upload-artifact@v4
       with:
-        name: youtube-playlist
-        path: youtube_playlist_*.zip
-        retention-days: 30
-        
-    - name: Cleanup
-      run: |
-        rm -f cookies.txt
-        rm -rf playlist_videos
-        echo "✅ Nettoyage terminé"
+        name: youtube-turbo
+        path: videos/
