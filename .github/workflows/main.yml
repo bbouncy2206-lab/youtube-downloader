@@ -26,42 +26,19 @@ jobs:
         echo "🔧 Installation des outils..."
         sudo apt-get update
         sudo apt-get install -y ffmpeg python3-pip aria2
-        pip3 install yt-dlp[default]
+        pip3 install yt-dlp
         
     - name: Setup Cookies from Secret
       run: |
         echo "🍪 Configuration des cookies YouTube..."
-        # Créer le fichier cookies à partir du secret
         echo '${{ secrets.YOUTUBE_COOKIES }}' > cookies.txt
         
-        # Vérifier que le fichier cookies est valide
         if [ -s cookies.txt ]; then
           echo "✅ Cookies chargés avec succès"
-          echo "📄 Premières lignes des cookies:"
-          head -5 cookies.txt
         else
           echo "❌ Erreur: Fichier cookies vide"
           exit 1
         fi
-        
-    - name: Configure Maximum Speed
-      run: |
-        echo "⚡ Configuration vitesse 1Gbps..."
-        mkdir -p ~/.config/yt-dlp
-        cat > ~/.config/yt-dlp/config << EOF
-        --cookies cookies.txt
-        --no-mtime
-        --no-overwrites
-        --continue
-        --concurrent-fragments 16
-        --http-chunk-size 50M
-        --external-downloader aria2c
-        --external-downloader-args "-x 16 -k 1M -s 16 -j 16"
-        --limit-rate 500M
-        --retries 10
-        --fragment-retries 10
-        --ignore-errors
-        EOF
         
     - name: Download Playlist with Cookies
       run: |
@@ -78,39 +55,42 @@ jobs:
           FORMAT="bestvideo[height<=720]+bestaudio/best[height<=720]"
         fi
         
-        # Téléchargement avec cookies et vitesse max
+        # Téléchargement avec cookies - VERSION CORRIGÉE
         yt-dlp \
           --cookies cookies.txt \
           --format "$FORMAT" \
           --merge-output-format mp4 \
-          --output "playlist_videos/%(playlist_title)s/%(title)s.%(ext)s" \
-          --concurrent-fragments 32 \
+          --output "playlist_videos/%(title)s.%(ext)s" \
+          --concurrent-fragments 16 \
           --external-downloader aria2c \
-          --external-downloader-args "-x 32 -k 2M -s 32 -j 32" \
+          --external-downloader-args "-x 16 -k 1M -s 16 -j 16" \
           --ignore-errors \
-          --print-after-download "✅ Téléchargé: %(title)s" \
+          --no-overwrites \
+          --continue \
           "${{ inputs.playlist_url }}"
           
-        echo "📊 Résumé du téléchargement..."
+        echo "✅ Téléchargement terminé !"
         
     - name: Create Organized ZIP
       run: |
         echo "🗜️ Création de l'archive ZIP..."
         
-        # Créer un nom d'archive avec timestamp
         TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
         ZIP_NAME="youtube_playlist_${TIMESTAMP}.zip"
         
-        # ZIP avec compression maximale
-        zip -r "${ZIP_NAME}" "playlist_videos/" -9
-        
-        # Statistiques
-        VIDEO_COUNT=$(find playlist_videos/ -name "*.mp4" | wc -l)
-        ZIP_SIZE=$(du -h "${ZIP_NAME}" | cut -f1)
-        
-        echo "📦 Archive: ${ZIP_NAME}"
-        echo "🎬 Vidéos téléchargées: ${VIDEO_COUNT}"
-        echo "💾 Taille: ${ZIP_SIZE}"
+        # Vérifier si des vidéos ont été téléchargées
+        if [ -d "playlist_videos" ] && [ "$(ls -A playlist_videos)" ]; then
+          zip -r "${ZIP_NAME}" "playlist_videos/" -9
+          VIDEO_COUNT=$(find playlist_videos/ -name "*.mp4" | wc -l)
+          ZIP_SIZE=$(du -h "${ZIP_NAME}" | cut -f1)
+          echo "📦 Archive: ${ZIP_NAME}"
+          echo "🎬 Vidéos: ${VIDEO_COUNT}"
+          echo "💾 Taille: ${ZIP_SIZE}"
+        else
+          echo "❌ Aucune vidéo téléchargée"
+          echo "YouTube bloque peut-être encore" > error.txt
+          zip "${ZIP_NAME}" "error.txt"
+        fi
         
     - name: Upload ZIP Artifact
       uses: actions/upload-artifact@v4
@@ -118,23 +98,17 @@ jobs:
         name: youtube-playlist
         path: youtube_playlist_*.zip
         retention-days: 30
-        compression-level: 9
         
     - name: Cleanup Cookies
       run: |
-        echo "🧹 Nettoyage des cookies..."
         rm -f cookies.txt
         echo "✅ Cookies supprimés"
         
     - name: Final Summary
       run: |
         echo " "
-        echo "🎉 TÉLÉCHARGEMENT TERMINÉ !"
-        echo "==================================="
+        echo "🎉 PROCESSUS TERMINÉ !"
+        echo "========================"
         echo "📹 Playlist: ${{ inputs.playlist_url }}"
-        echo "🎯 Qualité: ${{ inputs.quality }}"
-        echo "💾 Archive: youtube_playlist_*.zip"
-        echo "🍪 Cookies: Utilisés avec succès"
-        echo "🚀 Vitesse: Connexion 1Gbps GitHub"
-        echo "⬇️ Télécharge le ZIP dans 'Artifacts' ↑"
-        echo "==================================="
+        echo "⬇️ ZIP disponible dans 'Artifacts'"
+        echo "========================"
