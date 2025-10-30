@@ -1,11 +1,10 @@
-name: YouTube Playlist to ZIP Downloader
+name: YouTube Playlist Downloader (Cookies)
 on:
   workflow_dispatch:
     inputs:
       playlist_url:
         description: 'URL de la playlist YouTube'
         required: true
-        default: 'https://youtube.com/playlist?list=XXX'
       quality:
         description: 'Qualité vidéo'
         required: true
@@ -15,32 +14,42 @@ on:
         - 1080p
         - 720p
         - 480p
-        - best
 
 jobs:
-  youtube-playlist-downloader:
+  youtube-downloader:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     
     steps:
-    - name: Setup Environment
-      run: |
-        echo "🚀 YouTube Playlist Downloader - 1Gbps"
-        echo "📹 Playlist URL: ${{ inputs.playlist_url }}"
-        echo "🎯 Quality: ${{ inputs.quality }}"
-        
     - name: Install YouTube Tools
       run: |
-        sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
-        sudo chmod a+rx /usr/local/bin/yt-dlp
+        echo "🔧 Installation des outils..."
         sudo apt-get update
-        sudo apt-get install -y ffmpeg aria2 zip unzip curl
+        sudo apt-get install -y ffmpeg python3-pip aria2
         pip3 install yt-dlp[default]
+        
+    - name: Setup Cookies from Secret
+      run: |
+        echo "🍪 Configuration des cookies YouTube..."
+        # Créer le fichier cookies à partir du secret
+        echo '${{ secrets.YOUTUBE_COOKIES }}' > cookies.txt
+        
+        # Vérifier que le fichier cookies est valide
+        if [ -s cookies.txt ]; then
+          echo "✅ Cookies chargés avec succès"
+          echo "📄 Premières lignes des cookies:"
+          head -5 cookies.txt
+        else
+          echo "❌ Erreur: Fichier cookies vide"
+          exit 1
+        fi
         
     - name: Configure Maximum Speed
       run: |
+        echo "⚡ Configuration vitesse 1Gbps..."
         mkdir -p ~/.config/yt-dlp
         cat > ~/.config/yt-dlp/config << EOF
+        --cookies cookies.txt
         --no-mtime
         --no-overwrites
         --continue
@@ -51,16 +60,15 @@ jobs:
         --limit-rate 500M
         --retries 10
         --fragment-retries 10
+        --ignore-errors
         EOF
         
-    - name: Download Playlist
+    - name: Download Playlist with Cookies
       run: |
-        echo "📥 Téléchargement de la playlist..."
+        echo "🎬 Téléchargement avec cookies..."
         
-        # Configuration format basée sur la qualité
-        if [ "${{ inputs.quality }}" = "best" ]; then
-          FORMAT="bestvideo[height<=1080]+bestaudio/best[height<=1080]"
-        elif [ "${{ inputs.quality }}" = "1080p" ]; then
+        # Configuration qualité
+        if [ "${{ inputs.quality }}" = "1080p" ]; then
           FORMAT="bestvideo[height<=1080]+bestaudio/best[height<=1080]"
         elif [ "${{ inputs.quality }}" = "720p" ]; then
           FORMAT="bestvideo[height<=720]+bestaudio/best[height<=720]"
@@ -70,36 +78,63 @@ jobs:
           FORMAT="bestvideo[height<=720]+bestaudio/best[height<=720]"
         fi
         
-        # Commande de téléchargement
+        # Téléchargement avec cookies et vitesse max
         yt-dlp \
+          --cookies cookies.txt \
           --format "$FORMAT" \
           --merge-output-format mp4 \
-          --output "playlist_videos/%(title)s.%(ext)s" \
+          --output "playlist_videos/%(playlist_title)s/%(title)s.%(ext)s" \
           --concurrent-fragments 32 \
+          --external-downloader aria2c \
+          --external-downloader-args "-x 32 -k 2M -s 32 -j 32" \
+          --ignore-errors \
+          --print-after-download "✅ Téléchargé: %(title)s" \
           "${{ inputs.playlist_url }}"
           
-        echo "✅ Téléchargement terminé !"
+        echo "📊 Résumé du téléchargement..."
         
-    - name: Create ZIP Archive
+    - name: Create Organized ZIP
       run: |
         echo "🗜️ Création de l'archive ZIP..."
-        zip -r "youtube_playlist.zip" "playlist_videos/" -9
-        echo "📦 Archive créée: youtube_playlist.zip"
-        echo "📁 Nombre de vidéos: $(find playlist_videos/ -name '*.mp4' | wc -l)"
         
-    - name: Upload ZIP as Artifact
+        # Créer un nom d'archive avec timestamp
+        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+        ZIP_NAME="youtube_playlist_${TIMESTAMP}.zip"
+        
+        # ZIP avec compression maximale
+        zip -r "${ZIP_NAME}" "playlist_videos/" -9
+        
+        # Statistiques
+        VIDEO_COUNT=$(find playlist_videos/ -name "*.mp4" | wc -l)
+        ZIP_SIZE=$(du -h "${ZIP_NAME}" | cut -f1)
+        
+        echo "📦 Archive: ${ZIP_NAME}"
+        echo "🎬 Vidéos téléchargées: ${VIDEO_COUNT}"
+        echo "💾 Taille: ${ZIP_SIZE}"
+        
+    - name: Upload ZIP Artifact
       uses: actions/upload-artifact@v4
       with:
         name: youtube-playlist
-        path: youtube_playlist.zip
+        path: youtube_playlist_*.zip
         retention-days: 30
+        compression-level: 9
         
-    - name: Display Download Summary
+    - name: Cleanup Cookies
+      run: |
+        echo "🧹 Nettoyage des cookies..."
+        rm -f cookies.txt
+        echo "✅ Cookies supprimés"
+        
+    - name: Final Summary
       run: |
         echo " "
         echo "🎉 TÉLÉCHARGEMENT TERMINÉ !"
         echo "==================================="
         echo "📹 Playlist: ${{ inputs.playlist_url }}"
-        echo "💾 Archive: youtube_playlist.zip" 
-        echo "⬇️ Télécharge le ZIP dans l'onglet 'Artifacts'"
+        echo "🎯 Qualité: ${{ inputs.quality }}"
+        echo "💾 Archive: youtube_playlist_*.zip"
+        echo "🍪 Cookies: Utilisés avec succès"
+        echo "🚀 Vitesse: Connexion 1Gbps GitHub"
+        echo "⬇️ Télécharge le ZIP dans 'Artifacts' ↑"
         echo "==================================="
