@@ -1,42 +1,117 @@
-name: YouTube Turbo (Sans Cookies)
+name: YouTube Downloader avec ZIP
 on:
   workflow_dispatch:
     inputs:
       playlist_url:
         description: 'URL playlist YouTube'
         required: true
+      quality:
+        description: 'Qualité vidéo'
+        required: false
+        default: 'best'
+        type: choice
+        options:
+        - best
+        - 1080p
+        - 720p
+        - 480p
 
 jobs:
   download:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     
     steps:
-    - name: Installer yt-dlp avec dépendances
+    - name: Installer yt-dlp BETA et outils
       run: |
+        pip3 install --upgrade "https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz"
         sudo apt-get update
-        sudo apt-get install -y ffmpeg python3-pip aria2
-        pip3 install yt-dlp --upgrade
+        sudo apt-get install -y ffmpeg zip unzip
         
-    - name: Téléchargement turbo sans cookies
+    - name: Téléchargement avec extractor forcé
       run: |
+        # Configuration qualité
+        if [ "${{ github.event.inputs.quality }}" = "1080p" ]; then
+          FORMAT="best[height<=1080]"
+        elif [ "${{ github.event.inputs.quality }}" = "720p" ]; then
+          FORMAT="best[height<=720]"
+        elif [ "${{ github.event.inputs.quality }}" = "480p" ]; then
+          FORMAT="best[height<=480]"
+        else
+          FORMAT="best"
+        fi
+        
         yt-dlp \
-        --format "best[ext=mp4]/best" \
         --ignore-errors \
         --no-warnings \
+        --extractor-args "youtube:skip=webpage" \
+        --extractor-args "youtube:player_client=android,web" \
+        --format "$FORMAT" \
+        --merge-output-format mp4 \
         --restrict-filenames \
-        --concurrent-fragments 5 \
-        --throttled-rate 1M \
-        --buffer-size 16K \
-        --http-chunk-size 10M \
-        --extractor-args "youtube:player_client=android" \
-        --add-header "User-Agent:Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36" \
-        --add-header "Accept-Language:fr-FR,fr;q=0.9" \
-        -o "videos/%(title).100s.%(ext)s" \
+        --output "videos/%(playlist_title)s/%(playlist_index)02d - %(title).100s.%(ext)s" \
         "${{ inputs.playlist_url }}"
         
-    - name: Upload résultat
+    - name: Vérifier les téléchargements
+      run: |
+        echo "📊 Contenu du dossier videos :"
+        find videos/ -type f -name "*.mp4" | head -10
+        VIDEO_COUNT=$(find videos/ -type f -name "*.mp4" | wc -l)
+        echo "🎬 Nombre de vidéos téléchargées : $VIDEO_COUNT"
+        
+        if [ $VIDEO_COUNT -eq 0 ]; then
+          echo "❌ Aucune vidéo téléchargée - tentative alternative..."
+          # Fallback simple
+          yt-dlp \
+          --ignore-errors \
+          --format "best[ext=mp4]" \
+          --restrict-filenames \
+          -o "videos_fallback/%(title)s.%(ext)s" \
+          "${{ inputs.playlist_url }}" || true
+        fi
+        
+    - name: Créer l'archive ZIP organisée
+      run: |
+        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+        
+        # Vérifier quel dossier contient des vidéos
+        if [ -d "videos" ] && [ "$(ls -A videos/ 2>/dev/null)" ]; then
+          FOLDER="videos"
+        elif [ -d "videos_fallback" ] && [ "$(ls -A videos_fallback/ 2>/dev/null)" ]; then
+          FOLDER="videos_fallback"
+        else
+          echo "❌ Aucune vidéo trouvée"
+          exit 1
+        fi
+        
+        echo "📦 Compression du dossier : $FOLDER"
+        
+        # Créer ZIP avec meilleure compression
+        zip -r "youtube_playlist_${TIMESTAMP}.zip" "$FOLDER/" -9
+        
+        # Statistiques
+        ZIP_SIZE=$(du -h "youtube_playlist_${TIMESTAMP}.zip" | cut -f1)
+        VIDEO_COUNT=$(find "$FOLDER/" -name "*.mp4" | wc -l)
+        
+        echo "✅ Archive créée : youtube_playlist_${TIMESTAMP}.zip"
+        echo "📊 Taille : $ZIP_SIZE"
+        echo "🎬 Vidéos : $VIDEO_COUNT"
+        
+    - name: Upload l'archive ZIP
       uses: actions/upload-artifact@v4
       with:
-        name: youtube-turbo
-        path: videos/
+        name: youtube-playlist-zip
+        path: youtube_playlist_*.zip
+        retention-days: 7
+        
+    - name: Nettoyage (optionnel)
+      run: |
+        rm -rf videos/ videos_fallback/
+        echo "🧹 Nettoyage terminé"
+        
+    - name: Résumé final
+      run: |
+        echo "🎉 TÉLÉCHARGEMENT TERMINÉ !"
+        echo "📦 Fichier ZIP disponible dans l'onglet 'Artifacts'"
+        echo "💾 Nom : youtube-playlist-zip"
+        echo "⬇️  Clique sur le fichier pour le télécharger sur ton PC"
