@@ -11,10 +11,10 @@ on:
         default: 'best'
         type: choice
         options:
-        - best
-        - 1080p
-        - 720p
-        - 480p
+          - best
+          - 1080p
+          - 720p
+          - 480p
 
 jobs:
   download:
@@ -32,7 +32,6 @@ jobs:
       run: |
         echo "🍪 Création du fichier cookies avec TES données..."
         
-        # Créer le fichier cookies exactement comme tu l'as fourni
         cat > cookies.txt << 'EOF'
 # Netscape HTTP Cookie File
 # https://curl.haxx.se/rfc/cookie_spec.html
@@ -61,14 +60,11 @@ jobs:
 EOF
 
         echo "✅ Fichier cookies créé"
-        echo "📋 Vérification :"
-        head -3 cookies.txt
         
     - name: Télécharger la playlist avec cookies
       run: |
         echo "🎬 Début du téléchargement avec authentification..."
         
-        # Configuration qualité
         if [ "${{ github.event.inputs.quality }}" = "1080p" ]; then
           FORMAT="best[height<=1080]"
         elif [ "${{ github.event.inputs.quality }}" = "720p" ]; then
@@ -88,7 +84,7 @@ EOF
           --restrict-filenames \
           --concurrent-fragments 3 \
           --output "videos/%(playlist_title)s/%(playlist_index)02d - %(title).100s.%(ext)s" \
-          "${{ inputs.playlist_url }}"
+          "${{ github.event.inputs.playlist_url }}"
           
         echo "✅ Téléchargement terminé avec succès !"
         
@@ -104,7 +100,7 @@ EOF
             find videos/ -name "*.mp4" -type f | head -5
             echo "💾 Taille totale : $(du -sh videos/ | cut -f1)"
           else
-            echo "❌ Aucune vidéo trouvée - vérifiez les cookies"
+            echo "❌ Aucune vidéo trouvée"
             exit 1
           fi
         else
