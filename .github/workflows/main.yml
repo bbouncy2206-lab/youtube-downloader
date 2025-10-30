@@ -1,9 +1,9 @@
-name: YouTube Downloader avec ZIP
+name: YouTube Downloader avec TES Cookies
 on:
   workflow_dispatch:
     inputs:
       playlist_url:
-        description: 'URL playlist YouTube'
+        description: 'URL de la playlist YouTube'
         required: true
       quality:
         description: 'Qualité vidéo'
@@ -19,17 +19,55 @@ on:
 jobs:
   download:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     
     steps:
-    - name: Installer yt-dlp BETA et outils
+    - name: Installer yt-dlp et dépendances
       run: |
-        pip3 install --upgrade "https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz"
         sudo apt-get update
-        sudo apt-get install -y ffmpeg zip unzip
+        sudo apt-get install -y ffmpeg python3-pip zip
+        pip3 install yt-dlp --upgrade
         
-    - name: Téléchargement avec extractor forcé
+    - name: Créer le fichier cookies avec TES cookies
       run: |
+        echo "🍪 Création du fichier cookies avec TES données..."
+        
+        # Créer le fichier cookies exactement comme tu l'as fourni
+        cat > cookies.txt << 'EOF'
+# Netscape HTTP Cookie File
+# https://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file! Do not edit.
+
+.youtube.com	TRUE	/	FALSE	1796420629	HSID	A8XM_f52BFLyhr5B3
+.youtube.com	TRUE	/	TRUE	1796420629	SSID	AqP1D6G4pLc7f88Bt
+.youtube.com	TRUE	/	FALSE	1796420629	APISID	e-IqRTByZ4RaIq-Q/ApaJSIuJ5Wne8d0TZ
+.youtube.com	TRUE	/	TRUE	1796420629	SAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
+.youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
+.youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
+.youtube.com	TRUE	/	TRUE	1795547058	LOGIN_INFO	AFmmF2swRAIgCsYq6oKITKKUbgf5KlRCVY0XXC9Hk1BCkuP0zkWNK3MCIG-aI53OvSx5Yzu3leemSEebTXKBedWxtgdIHnGNS4LC:QUQ3MjNmeEpPc0VycUVuNDM3bVdqcmhROU9CcnRvU3lyYnNrXzFUVy0zYTU4eXl0MFZXcnVwbmdwVUl5RUJlemtudEcwUjBoNWVYWldwenBXM2lXUHlfX3NheEVXOU9hVkFUYkh1WG9nRzdjQWg1aUFvcEJxYVdwcXRsb2xocVhnNWo4TWJGdHIxdWNBVTh2dzU0UmhNTEVvcjM5TnZfNkFB
+.youtube.com	TRUE	/	TRUE	1796421663	PREF	f4=4000000&tz=Africa.Casablanca&f7=100
+.youtube.com	TRUE	/	FALSE	1796420629	SID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOsj6xENYkrc56nUH9F6O3WAACgYKAZgSARcSFQHGX2Mimux-hozHrkU5dnMIx0r89xoVAUF8yKrgeQYqi2FhG9Oi_cHMP9bm0076
+.youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOCb6GUUTlVhNZ14lGvZMCjgACgYKAaMSARcSFQHGX2MixUc5O-biDgPDvIpquSwR1BoVAUF8yKppaExgDHDAxQAGU13-nI6h0076
+.youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOVV8W_EqfTHurrna6H5K79AACgYKATMSARcSFQHGX2MiwowKIid-WDBmSU-_fD0bThoVAUF8yKrJ55HVzyAxfDr2-MSS-MTv0076
+.youtube.com	TRUE	/	TRUE	1793397239	__Secure-1PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
+.youtube.com	TRUE	/	TRUE	1793397239	__Secure-3PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
+.youtube.com	TRUE	/	FALSE	1793397663	SIDCC	AKEyXzUDHZHZ_Jw3-AX1hDwRcvDGUeQQqM_T7vKCbK2ZHV5q2UP13y03GHTSGLLKwVCWfok-WRo
+.youtube.com	TRUE	/	TRUE	1793397663	__Secure-1PSIDCC	AKEyXzUKL7s-6qkTd_YOkD7yZdh0HDBNN13XnnMIeo8iT1qw3vFXIYHi39_nXrOvq14YlRFoXg
+.youtube.com	TRUE	/	TRUE	1793397663	__Secure-3PSIDCC	AKEyXzW_xF7qwOP362NuRwDLPfyySOfVnDjnvZL0PEyHWgmjrCmKnLk51vM3nS4CYhzCbzr-ag4
+.youtube.com	TRUE	/	TRUE	1777413657	VISITOR_INFO1_LIVE	EsfKh0eQ3S0
+.youtube.com	TRUE	/	TRUE	1777413657	VISITOR_PRIVACY_METADATA	CgJNQRIEGgAgZQ%3D%3D
+.youtube.com	TRUE	/	TRUE	0	YSC	wva4-DWxd54
+.youtube.com	TRUE	/	TRUE	1777401415	__Secure-ROLLOUT_TOKEN	CJ6jh76s24Ss5gEQ_KHM_7uzkAMY1tOexMjMkAM%3D
+EOF
+
+        echo "✅ Fichier cookies créé"
+        echo "📋 Vérification :"
+        head -3 cookies.txt
+        
+    - name: Télécharger la playlist avec cookies
+      run: |
+        echo "🎬 Début du téléchargement avec authentification..."
+        
         # Configuration qualité
         if [ "${{ github.event.inputs.quality }}" = "1080p" ]; then
           FORMAT="best[height<=1080]"
@@ -42,76 +80,72 @@ jobs:
         fi
         
         yt-dlp \
-        --ignore-errors \
-        --no-warnings \
-        --extractor-args "youtube:skip=webpage" \
-        --extractor-args "youtube:player_client=android,web" \
-        --format "$FORMAT" \
-        --merge-output-format mp4 \
-        --restrict-filenames \
-        --output "videos/%(playlist_title)s/%(playlist_index)02d - %(title).100s.%(ext)s" \
-        "${{ inputs.playlist_url }}"
+          --cookies cookies.txt \
+          --format "$FORMAT" \
+          --merge-output-format mp4 \
+          --ignore-errors \
+          --no-warnings \
+          --restrict-filenames \
+          --concurrent-fragments 3 \
+          --output "videos/%(playlist_title)s/%(playlist_index)02d - %(title).100s.%(ext)s" \
+          "${{ inputs.playlist_url }}"
+          
+        echo "✅ Téléchargement terminé avec succès !"
         
     - name: Vérifier les téléchargements
       run: |
-        echo "📊 Contenu du dossier videos :"
-        find videos/ -type f -name "*.mp4" | head -10
-        VIDEO_COUNT=$(find videos/ -type f -name "*.mp4" | wc -l)
-        echo "🎬 Nombre de vidéos téléchargées : $VIDEO_COUNT"
-        
-        if [ $VIDEO_COUNT -eq 0 ]; then
-          echo "❌ Aucune vidéo téléchargée - tentative alternative..."
-          # Fallback simple
-          yt-dlp \
-          --ignore-errors \
-          --format "best[ext=mp4]" \
-          --restrict-filenames \
-          -o "videos_fallback/%(title)s.%(ext)s" \
-          "${{ inputs.playlist_url }}" || true
-        fi
-        
-    - name: Créer l'archive ZIP organisée
-      run: |
-        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-        
-        # Vérifier quel dossier contient des vidéos
-        if [ -d "videos" ] && [ "$(ls -A videos/ 2>/dev/null)" ]; then
-          FOLDER="videos"
-        elif [ -d "videos_fallback" ] && [ "$(ls -A videos_fallback/ 2>/dev/null)" ]; then
-          FOLDER="videos_fallback"
+        echo "🔍 Vérification des fichiers..."
+        if [ -d "videos" ]; then
+          VIDEO_COUNT=$(find videos/ -name "*.mp4" -type f | wc -l)
+          echo "📹 Nombre de vidéos téléchargées : $VIDEO_COUNT"
+          
+          if [ $VIDEO_COUNT -gt 0 ]; then
+            echo "🎯 Liste des premières vidéos :"
+            find videos/ -name "*.mp4" -type f | head -5
+            echo "💾 Taille totale : $(du -sh videos/ | cut -f1)"
+          else
+            echo "❌ Aucune vidéo trouvée - vérifiez les cookies"
+            exit 1
+          fi
         else
-          echo "❌ Aucune vidéo trouvée"
+          echo "❌ Dossier videos non trouvé"
           exit 1
         fi
         
-        echo "📦 Compression du dossier : $FOLDER"
+    - name: Créer l'archive ZIP
+      run: |
+        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+        PLAYLIST_NAME=$(find videos/ -maxdepth 1 -type d -name "*" | head -1 | xargs basename 2>/dev/null || echo "youtube_playlist")
         
-        # Créer ZIP avec meilleure compression
-        zip -r "youtube_playlist_${TIMESTAMP}.zip" "$FOLDER/" -9
+        echo "📦 Création de l'archive : ${PLAYLIST_NAME}_${TIMESTAMP}.zip"
         
-        # Statistiques
-        ZIP_SIZE=$(du -h "youtube_playlist_${TIMESTAMP}.zip" | cut -f1)
-        VIDEO_COUNT=$(find "$FOLDER/" -name "*.mp4" | wc -l)
+        zip -r "${PLAYLIST_NAME}_${TIMESTAMP}.zip" "videos/" -9
         
-        echo "✅ Archive créée : youtube_playlist_${TIMESTAMP}.zip"
+        ZIP_SIZE=$(du -h "${PLAYLIST_NAME}_${TIMESTAMP}.zip" | cut -f1)
+        VIDEO_COUNT=$(find videos/ -name "*.mp4" | wc -l)
+        
+        echo "✅ Archive créée : ${PLAYLIST_NAME}_${TIMESTAMP}.zip"
         echo "📊 Taille : $ZIP_SIZE"
         echo "🎬 Vidéos : $VIDEO_COUNT"
         
     - name: Upload l'archive ZIP
       uses: actions/upload-artifact@v4
       with:
-        name: youtube-playlist-zip
-        path: youtube_playlist_*.zip
+        name: youtube-playlist-complete
+        path: "*.zip"
         retention-days: 7
         
-    - name: Nettoyage (optionnel)
+    - name: Nettoyage sécurisé
       run: |
-        rm -rf videos/ videos_fallback/
-        echo "🧹 Nettoyage terminé"
+        rm -f cookies.txt
+        echo "🧹 Cookies supprimés pour sécurité"
         
-    - name: Résumé final
+    - name: Message de succès
       run: |
-        echo "🎉 TÉLÉCHARGEMENT TERMINÉ !"
-        echo "📦 Fichier ZIP disponible dans l'onglet 'Artifacts'"
-        echo "💾 Nom : youtube-playlist-zip"
-        echo "⬇️  Clique sur le fichier pour le télécharger sur ton PC"
+        echo " "
+        echo "🎉 SUCCÈS COMPLET !"
+        echo "===================="
+        echo "📦 Le fichier ZIP est disponible dans 'Artifacts'"
+        echo "⬇️  Télécharge-le sur ton PC et décompresse-le"
+        echo "🔒 Les cookies ont été supprimés automatiquement"
+        echo " "
