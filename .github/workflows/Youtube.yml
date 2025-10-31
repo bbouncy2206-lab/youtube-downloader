@@ -22,7 +22,7 @@ jobs:
         sudo apt-get install -y python3-pip ffmpeg zip
         pip3 install --upgrade yt-dlp
 
-    - name: Créer le fichier cookies.txt (format correct)
+    - name: Créer le fichier cookies.txt (NOUVEAUX COOKIES)
       run: |
         cat > cookies.txt << 'EOF'
         # Netscape HTTP Cookie File
@@ -33,29 +33,28 @@ jobs:
         .youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
         .youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PAPISID	mgaOzZZe281Ea6_q/AYvkZ-qF22xw-35-t
         .youtube.com	TRUE	/	TRUE	1795547058	LOGIN_INFO	AFmmF2swRAIgCsYq6oKITKKUbgf5KlRCVY0XXC9Hk1BCkuP0zkWNK3MCIG-aI53OvSx5Yzu3leemSEebTXKBedWxtgdIHnGNS4LC:QUQ3MjNmeEpPc0VycUVuNDM3bVdqcmhROU9CcnRvU3lyYnNrXzFUVy0zYTU4eXl0MFZXcnVwbmdwVUl5RUJlemtudEcwUjBoNWVYWldwenBXM2lXUHlfX3NheEVXOU9hVkFUYkh1WG9nRzdjQWg1aUFvcEJxYVdwcXRsb2xocVhnNWo4TWJGdHIxdWNBVTh2dzU0UmhNTEVvcjM5TnZfNkFB
-        .youtube.com	TRUE	/	TRUE	1796421663	PREF	f4=4000000&tz=Africa.Casablanca&f7=100
+        .youtube.com	TRUE	/	TRUE	1796426963	PREF	f4=4000000&tz=Africa.Casablanca&f7=100
         .youtube.com	TRUE	/	FALSE	1796420629	SID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOsj6xENYkrc56nUH9F6O3WAACgYKAZgSARcSFQHGX2Mimux-hozHrkU5dnMIx0r89xoVAUF8yKrgeQYqi2FhG9Oi_cHMP9bm0076
         .youtube.com	TRUE	/	TRUE	1796420629	__Secure-1PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOCb6GUUTlVhNZ14lGvZMCjgACgYKAaMSARcSFQHGX2MixUc5O-biDgPDvIpquSwR1BoVAUF8yKppaExgDHDAxQAGU13-nI6h0076
         .youtube.com	TRUE	/	TRUE	1796420629	__Secure-3PSID	g.a0003AgBksMKpKpSLTostdnqQwGWYpBrZxniIxrwn93SwchGEgZOVV8W_EqfTHurrna6H5K79AACgYKATMSARcSFQHGX2MiwowKIid-WDBmSU-_fD0bThoVAUF8yKrJ55HVzyAxfDr2-MSS-MTv0076
-        .youtube.com	TRUE	/	TRUE	1793397239	__Secure-1PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
-        .youtube.com	TRUE	/	TRUE	1793397239	__Secure-3PSIDTS	sidts-CjEBwQ9iI53ZwOcNrs7P-8nlqEQxQQtEeuD8wmlTAB7UMh7wWn1vrkZHY0x_LkfKOUjPEAA
-        .youtube.com	TRUE	/	FALSE	1793397663	SIDCC	AKEyXzUDHZHZ_Jw3-AX1hDwRcvDGUeQQqM_T7vKCbK2ZHV5q2UP13y03GHTSGLLKwVCWfok-WRo
-        .youtube.com	TRUE	/	TRUE	1793397663	__Secure-1PSIDCC	AKEyXzUKL7s-6qkTd_YOkD7yZdh0HDBNN13XnnMIeo8iT1qw3vFXIYHi39_nXrOvq14YlRFoXg
-        .youtube.com	TRUE	/	TRUE	1793397663	__Secure-3PSIDCC	AKEyXzW_xF7qwOP362NuRwDLPfyySOfVnDjnvZL0PEyHWgmjrCmKnLk51vM3nS4CYhzCbzr-ag4
-        .youtube.com	TRUE	/	TRUE	1777413657	VISITOR_INFO1_LIVE	EsfKh0eQ3S0
-        .youtube.com	TRUE	/	TRUE	1777413657	VISITOR_PRIVACY_METADATA	CgJNQRIEGgAgZQ%3D%3D
-        .youtube.com	TRUE	/	TRUE	0	YSC	wva4-DWxd54
+        .youtube.com	TRUE	/	TRUE	1793403717	__Secure-1PSIDTS	sidts-CjEBwQ9iI16LG7VWD6Acjas4_HeV-YKy6xe00W29ldPU5N0LZdkDI5C1KPS9Nm6yUzaaEAA
+        .youtube.com	TRUE	/	TRUE	1793403717	__Secure-3PSIDTS	sidts-CjEBwQ9iI16LG7VWD6Acjas4_HeV-YKy6xe00W29ldPU5N0LZdkDI5C1KPS9Nm6yUzaaEAA
+        .youtube.com	TRUE	/	FALSE	1793403717	SIDCC	AKEyXzX2JYVaG0jFRjB065uzAfIyoHaVH8Z6RrDvHpH0NBYfnR6zFpxWQzfgVTYJN2wPPkGPD9w
+        .youtube.com	TRUE	/	TRUE	1793403717	__Secure-1PSIDCC	AKEyXzWRtN8YU31QPLKryFib0oGUh3MHO0Lsi-Y6hvaPM_mh6xNvt8JAyLgf8jUlg2gXsq6Zzw
+        .youtube.com	TRUE	/	TRUE	1793403717	__Secure-3PSIDCC	AKEyXzVENXr9NVxZWnMGaHjVsiuwl1dyf8UM1OIf-b5EwN2mK58fSzOWy2ZUqxtRLMrKibfE0sc
+        .youtube.com	TRUE	/	TRUE	1777418950	VISITOR_INFO1_LIVE	EsfKh0eQ3S0
+        .youtube.com	TRUE	/	TRUE	1777418950	VISITOR_PRIVACY_METADATA	CgJNQRIEGgAgZQ%3D%3D
         .youtube.com	TRUE	/	TRUE	1777401415	__Secure-ROLLOUT_TOKEN	CJ6jh76s24Ss5gEQ_KHM_7uzkAMY1tOexMjMkAM%3D
+        .youtube.com	TRUE	/	TRUE	0	YSC	5J19DQJdgXo
         EOF
 
-    - name: Vérifier le fichier cookies
+    - name: Vérifier les cookies
       run: |
-        echo "📄 Contenu du fichier cookies.txt:"
-        cat cookies.txt
-        echo ""
-        echo "✅ Fichier cookies créé avec $(wc -l < cookies.txt) lignes"
+        echo "✅ Fichier cookies créé : $(wc -l < cookies.txt) lignes"
+        echo "🔍 Premiers cookies:"
+        head -n 3 cookies.txt
 
-    - name: Télécharger la playlist YouTube
+    - name: Télécharger la playlist
       run: |
         mkdir -p downloads
         yt-dlp \
@@ -66,32 +65,40 @@ jobs:
           --no-warnings \
           --retries 10 \
           --fragment-retries 10 \
-          --sleep-interval 2 \
-          --max-sleep-interval 5 \
+          --sleep-interval 3 \
+          --max-sleep-interval 8 \
           --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+          --referer "https://www.youtube.com/" \
           --add-header "Accept-Language:en-US,en;q=0.9" \
           --add-header "Accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
-          --extractor-args "youtube:player_client=web" \
+          --add-header "Sec-Fetch-Dest:document" \
+          --add-header "Sec-Fetch-Mode:navigate" \
+          --add-header "Sec-Fetch-Site:none" \
+          --extractor-args "youtube:player_client=web;player_skip=webpage,configs" \
           -o "downloads/%(playlist_index)s - %(title)s.%(ext)s" \
           "${{ github.event.inputs.playlist_url }}"
 
     - name: Vérifier les téléchargements
       run: |
-        echo "📊 Fichiers téléchargés:"
-        ls -lh downloads/ || echo "❌ Aucun fichier téléchargé"
+        echo "📊 Résumé des téléchargements:"
+        if [ "$(ls -A downloads 2>/dev/null)" ]; then
+          echo "✅ Fichiers téléchargés : $(ls -1 downloads | wc -l)"
+          echo "💾 Taille totale : $(du -sh downloads | cut -f1)"
+          echo ""
+          echo "📋 Liste des fichiers:"
+          ls -lh downloads/
+        else
+          echo "❌ Aucun fichier téléchargé"
+          exit 1
+        fi
 
     - name: Créer l'archive ZIP
       if: success()
       run: |
         cd downloads
-        if [ "$(ls -A)" ]; then
-          zip -r ../youtube_playlist.zip .
-          cd ..
-          echo "📦 Archive créée : $(du -h youtube_playlist.zip | cut -f1)"
-        else
-          echo "❌ Aucun fichier à archiver"
-          exit 1
-        fi
+        zip -r ../youtube_playlist.zip .
+        cd ..
+        echo "📦 Archive créée : $(du -h youtube_playlist.zip | cut -f1)"
 
     - name: Upload les vidéos
       if: success()
@@ -101,14 +108,19 @@ jobs:
         path: youtube_playlist.zip
         retention-days: 7
 
-    - name: Résumé du téléchargement
+    - name: Résumé final
       if: always()
       run: |
-        if [ -d "downloads" ] && [ "$(ls -A downloads)" ]; then
-          echo "✅ Téléchargement terminé !"
-          echo "📊 Nombre de fichiers : $(ls -1 downloads | wc -l)"
-          echo "💾 Taille totale : $(du -sh downloads | cut -f1)"
+        echo "======================================"
+        if [ -f "youtube_playlist.zip" ]; then
+          echo "✅ SUCCÈS - Vidéos téléchargées !"
+          echo "📦 Fichier ZIP disponible dans les Artifacts"
+          echo "💾 Taille : $(du -h youtube_playlist.zip | cut -f1)"
         else
-          echo "⚠️ Aucune vidéo n'a été téléchargée"
-          echo "🔍 Vérifiez que vos cookies sont toujours valides"
+          echo "❌ ÉCHEC - Problème de téléchargement"
+          echo "🔍 Vérifiez que:"
+          echo "  - Les cookies sont toujours valides"
+          echo "  - La playlist est accessible"
+          echo "  - Vous êtes connecté sur YouTube"
         fi
+        echo "======================================"
